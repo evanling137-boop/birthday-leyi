@@ -197,14 +197,19 @@ function loop(){ctx.clearRect(0,0,W,H);parts=parts.filter(p=>p.life>0&&p.y<H+40*
 loop();
 
 /* ---- 第0屏 ---- */
-document.getElementById('startBtn').addEventListener('click',async()=>{
+function requestMotion(){
   try{
     if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
-      const r=await DeviceMotionEvent.requestPermission();state.motionOK=(r==='granted');
+      DeviceMotionEvent.requestPermission().then(r=>{state.motionOK=(r==='granted');}).catch(()=>{state.motionOK=false;});
     }else if('DeviceMotionEvent' in window){state.motionOK=true;}
   }catch(e){state.motionOK=false;}
-  go(1);
-});
+}
+const startBtn=document.getElementById('startBtn');
+function startParty(){
+  requestMotion();   // 后台申请权限，保留用户手势，但不等待
+  go(1);             // 立刻跳到下一页
+}
+startBtn.addEventListener('click',startParty);
 
 /* ---- 第1屏 刮刮卡 ---- */
 const card=document.getElementById('card');
