@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>口袋里的生日惊喜 · 乐怡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --grape:#1a0b2e; --grape-2:#2d1b4e;
+    --pink:#ff4d8d; --yellow:#ffd23f; --mint:#2ec4b6; --tangerine:#ff9f1c;
+    --cream:#fff7ed;
+    --display:'ZCOOL KuaiLe', "PingFang SC","Microsoft YaHei", system-ui, sans-serif;
+    --body:'Noto Sans SC', "PingFang SC","Microsoft YaHei", system-ui, sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:var(--body);
+    background:radial-gradient(120% 90% at 50% -10%, #3a1f63 0%, var(--grape-2) 40%, var(--grape) 100%);
+    color:var(--cream);overflow:hidden;position:fixed;inset:0;touch-action:manipulation;}
+  #fx{position:fixed;inset:0;pointer-events:none;z-index:40;}
+  .stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:28px 22px;text-align:center;gap:18px;opacity:0;transform:translateY(14px) scale(.98);
+    pointer-events:none;transition:opacity .45s ease, transform .45s ease;z-index:10;}
+  .stage.active{opacity:1;transform:none;pointer-events:auto;}
+  h1{font-family:var(--display);font-weight:400;line-height:1.2;}
+  .kicker{font-family:var(--display);letter-spacing:4px;font-size:14px;color:var(--yellow);opacity:.92;}
+  .sub{font-size:16px;line-height:1.6;max-width:24ch;color:#e9ddff;opacity:.94;}
+  .glow{font-size:clamp(44px,14vw,66px);line-height:1.18;
+    background:linear-gradient(100deg,var(--yellow),var(--pink) 55%,var(--tangerine));
+    -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(255,77,141,.35));}
+  .btn{font-family:var(--display);font-size:21px;color:var(--grape);border:none;border-radius:999px;
+    padding:15px 32px;cursor:pointer;background:linear-gradient(180deg,#fff,#ffe7b3);
+    box-shadow:0 8px 0 #c98a00, 0 12px 22px rgba(0,0,0,.35);transition:transform .08s ease, box-shadow .08s ease;user-select:none;}
+  .btn:active{transform:translateY(6px);box-shadow:0 2px 0 #c98a00,0 6px 12px rgba(0,0,0,.35);}
+  .btn.pink{background:linear-gradient(180deg,#ff8db8,var(--pink));color:#fff;box-shadow:0 8px 0 #b8245e,0 12px 22px rgba(0,0,0,.35);}
+  .btn.pink:active{box-shadow:0 2px 0 #b8245e,0 6px 12px rgba(0,0,0,.35);}
+  .btn.ghost{background:transparent;color:#cdbcf2;box-shadow:none;font-size:16px;padding:10px 18px;text-decoration:underline;}
+  .btn.ghost:active{transform:translateY(2px);}
+  .btn.sm{font-size:14px;padding:8px 16px;}
+  .dots{position:fixed;top:max(14px,env(safe-area-inset-top));left:0;right:0;display:flex;gap:8px;justify-content:center;z-index:30;}
+  .dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);transition:.3s;}
+  .dots i.on{background:var(--yellow);transform:scale(1.35);box-shadow:0 0 10px var(--yellow);}
+
+  /* 刮刮卡 */
+  .scratch-card{position:relative;width:min(88vw,340px);height:200px;border-radius:22px;overflow:hidden;
+    box-shadow:0 16px 30px rgba(0,0,0,.4);}
+  .scratch-reveal{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    background:linear-gradient(135deg,#ff8db8,#ffd23f 60%,#2ec4b6);}
+  .scratch-reveal span{font-family:var(--display);font-size:24px;color:#5a2a00;}
+  .scratch-reveal b{font-family:var(--display);font-weight:400;font-size:52px;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.15);}
+  #scratch{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;transition:opacity .5s ease;}
+
+  /* 蛋糕 */
+  .cake-scene{display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .cake{position:relative;width:230px;height:160px;filter:drop-shadow(0 14px 18px rgba(0,0,0,.4));transition:transform .12s ease;}
+  .plate{position:absolute;bottom:0;left:-12px;width:254px;height:22px;border-radius:50%;background:linear-gradient(180deg,#fff,#d8c7f5);}
+  .tier{position:absolute;left:50%;transform:translateX(-50%);border-radius:14px;}
+  .tier.t1{bottom:14px;width:210px;height:66px;background:linear-gradient(180deg,#ffb3d1,#ff6fa5);}
+  .tier.t2{bottom:74px;width:150px;height:54px;background:linear-gradient(180deg,#ffe39e,#ffc24d);}
+  .frost{position:absolute;left:50%;transform:translateX(-50%);height:16px;border-radius:0 0 14px 14px;background:#fff;}
+  .frost.f1{bottom:62px;width:212px;}
+  .frost.f2{bottom:120px;width:152px;}
+  .candle{position:absolute;bottom:128px;width:8px;height:30px;border-radius:3px;
+    background:repeating-linear-gradient(45deg,#fff 0 6px,var(--mint) 6px 12px);}
+  .flame{position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:14px;height:20px;
+    border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+    background:radial-gradient(circle at 50% 70%,#fff 0,var(--yellow) 35%,var(--tangerine) 75%,transparent 78%);
+    filter:drop-shadow(0 0 8px var(--tangerine));animation:flick .25s infinite alternate;transition:transform .1s ease, opacity .1s ease;}
+  @keyframes flick{from{transform:translateX(-50%) scale(1) rotate(-3deg)}to{transform:translateX(-52%) scaleY(1.18) rotate(3deg)}}
+  .cake.windy .flame{transform:translateX(-65%) scaleY(.6) rotate(28deg);opacity:.85;}
+  .candle.out .flame{display:none;}
+  .smoke{position:absolute;top:-20px;left:50%;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);opacity:0;}
+  .candle.out .smoke{animation:smk .9s ease forwards;}
+  @keyframes smk{0%{opacity:.6;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-34px) scale(2.4)}}
+  .meter{width:min(80vw,260px);height:14px;border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden;}
+  .meter b{display:block;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--yellow),var(--pink));transition:width .08s linear;}
+  .meter.shake b{transition:width .25s ease;}
+
+  .gift{font-size:104px;cursor:pointer;user-select:none;transition:transform .12s ease;filter:drop-shadow(0 12px 16px rgba(0,0,0,.4));}
+  .gift:active{transform:scale(.9) rotate(-4deg);}
+  .gift.wiggle{animation:wig .5s ease;}
+  @keyframes wig{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-7deg)}80%{transform:rotate(5deg)}}
+  .fortune{min-height:104px;display:flex;align-items:center;justify-content:center;font-family:var(--display);
+    font-size:22px;line-height:1.5;max-width:20ch;color:var(--cream);}
+  #shakeEmoji{font-size:96px;transition:transform .1s ease;}
+  #shakeEmoji.go{animation:wig .4s ease infinite;}
+  .finalName{font-family:var(--display);font-size:clamp(56px,22vw,110px);line-height:1;
+    background:linear-gradient(120deg,var(--mint),var(--yellow) 45%,var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 22px rgba(46,196,182,.4));}
+  .personal{font-size:18px;line-height:1.7;max-width:24ch;color:#efe6ff;}
+  .musicbar{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;color:#cdbcf2;}
+  .musicbar .row{display:flex;gap:14px;}
+  .hint{font-size:13px;color:#b39ddb;max-width:26ch;}
+  .row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  @media (prefers-reduced-motion: reduce){.flame{animation:none;}}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="dots" id="dots"></div>
+
+<section class="stage active" data-s="0">
+  <div class="kicker">口袋里的生日惊喜</div>
+  <h1 class="glow">嗨，乐怡<br>生日快乐！</h1>
+  <p class="sub">今天是你的大日子 🎉<br>接下来要刮一刮、吹一吹、摇一摇～</p>
+  <button class="btn pink" id="startBtn">开始派对 →</button>
+</section>
+
+<section class="stage" data-s="1">
+  <div class="kicker">第一步 · 刮开惊喜</div>
+  <h1 style="font-size:32px">用手指刮开<br>看看藏着什么 ✨</h1>
+  <div class="scratch-card" id="card">
+    <div class="scratch-reveal"><span>生日快乐</span><b id="revealName">乐怡</b></div>
+    <canvas id="scratch"></canvas>
+  </div>
+  <p class="sub" id="scratchHint">刮掉一半就会有惊喜～</p>
+</section>
+
+<section class="stage" data-s="2">
+  <div class="kicker" id="cakeKicker">第二步 · 吹灭蜡烛</div>
+  <h1 style="font-size:30px" id="cakeTitle">对着麦克风吹气<br>把蜡烛吹灭 🌬️</h1>
+  <div class="cake-scene">
+    <div class="cake" id="cake">
+      <div class="tier t1"></div><div class="frost f1"></div>
+      <div class="tier t2"></div><div class="frost f2"></div>
+      <div class="plate"></div>
+    </div>
+    <div class="meter" id="micMeterWrap" style="display:none"><b id="micMeter"></b></div>
+  </div>
+  <div class="row">
+    <button class="btn" id="micBtn">用麦克风吹 🎤</button>
+    <button class="btn ghost" id="tapCandlesBtn">…或者点蜡烛</button>
+  </div>
+  <p class="hint" id="cakeHint"></p>
+</section>
+
+<section class="stage" data-s="3">
+  <div class="kicker">第三步 · 摇起来</div>
+  <h1 style="font-size:32px">摇一摇手机<br>让彩带像雨一样落下 🎉</h1>
+  <div id="shakeEmoji">📱</div>
+  <div class="meter shake" id="shakeMeterWrap"><b id="shakeMeter"></b></div>
+  <p class="sub" id="shakeStatus">用力摇一摇！</p>
+  <div class="row"><button class="btn ghost" id="shakeFallback">摇不动？点这里代替</button></div>
+</section>
+
+<section class="stage" data-s="4">
+  <div class="kicker">第四步 · 你的生日签</div>
+  <h1 style="font-size:30px">点击礼物<br>抽一支生日签 🎁</h1>
+  <div class="gift" id="gift">🎁</div>
+  <div class="fortune" id="fortune">…</div>
+  <button class="btn pink" id="toFinal" style="display:none">我准备好接收祝福啦 →</button>
+</section>
+
+<section class="stage" data-s="5">
+  <div class="kicker">生日快乐</div>
+  <div class="finalName" id="finalName">乐怡</div>
+  <p class="personal" id="personalMsg"></p>
+  <div class="musicbar">
+    <span id="musicLabel">🎵 背景音乐：蜜雪冰城旋律</span>
+    <div class="row">
+      <button class="btn ghost sm" id="muteBtn">静音</button>
+    </div>
+  </div>
+  <button class="btn" id="replayBtn">再玩一次派对 ↺</button>
+</section>
+
+<script>
+const NAME='乐怡';
+const PALETTE=['#ff4d8d','#ffd23f','#2ec4b6','#ff9f1c','#fff7ed','#a06bff'];
+const stages=[...document.querySelectorAll('.stage')];
+const dotsBox=document.getElementById('dots');
+let current=0;
+const state={name:NAME,motionOK:false};
+document.getElementById('revealName').textContent=NAME;
+document.getElementById('finalName').textContent=NAME;
+stages.forEach(()=>{const i=document.createElement('i');dotsBox.appendChild(i);});
+const dots=[...dotsBox.children];
+function setDots(){dots.forEach((d,i)=>d.classList.toggle('on',i<=current));}
+function go(n){stages[current].classList.remove('active');current=n;stages[current].classList.add('active');setDots();
+  if(n===1)buildScratch();if(n===3)armShake();if(n===5)showFinal();
+  if(n!==5)stopAllMusic();}
+setDots();
+
+/* ---- 彩带引擎 ---- */
+const cv=document.getElementById('fx'),ctx=cv.getContext('2d');
+let parts=[],W,H,DPR;
+function size(){DPR=Math.min(devicePixelRatio||1,2);W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';}
+size();addEventListener('resize',size);
+function burst(x,y,n=42,spread=6){for(let i=0;i<n;i++){parts.push({x:x*DPR,y:y*DPR,vx:(Math.random()-.5)*spread*DPR,vy:(Math.random()*-spread-2)*DPR,g:.18*DPR+Math.random()*.12*DPR,s:(6+Math.random()*8)*DPR,rot:Math.random()*6.28,vr:(Math.random()-.5)*.4,c:PALETTE[(Math.random()*PALETTE.length)|0],life:1});}}
+function rain(n=60){for(let i=0;i<n;i++){parts.push({x:Math.random()*W,y:-20*DPR,vx:(Math.random()-.5)*2*DPR,vy:(2+Math.random()*4)*DPR,g:.05*DPR,s:(6+Math.random()*8)*DPR,rot:Math.random()*6.28,vr:(Math.random()-.5)*.4,c:PALETTE[(Math.random()*PALETTE.length)|0],life:1});}}
+function loop(){ctx.clearRect(0,0,W,H);parts=parts.filter(p=>p.life>0&&p.y<H+40*DPR);
+  for(const p of parts){p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);ctx.restore();}
+  requestAnimationFrame(loop);}
+loop();
+
+/* ---- 第0屏 ---- */
+document.getElementById('startBtn').addEventListener('click',async()=>{
+  try{
+    if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
+      const r=await DeviceMotionEvent.requestPermission();state.motionOK=(r==='granted');
+    }else if('DeviceMotionEvent' in window){state.motionOK=true;}
+  }catch(e){state.motionOK=false;}
+  go(1);
+});
+
+/* ---- 第1屏 刮刮卡 ---- */
+const card=document.getElementById('card');
+const scratch=document.getElementById('scratch');
+const sctx=scratch.getContext('2d');
+let scratching=false,scratchDone=false;
+function buildScratch(){
+  scratchDone=false;scratching=false;
+  [...stages[1].querySelectorAll('.adv')].forEach(b=>b.remove());
+  document.getElementById('scratchHint').textContent='刮掉一半就会有惊喜～';
+  const w=scratch.width=340,h=scratch.height=200;
+  scratch.style.opacity='1';scratch.style.pointerEvents='auto';
+  sctx.globalCompositeOperation='source-over';
+  const g=sctx.createLinearGradient(0,0,w,h);g.addColorStop(0,'#b9a3e6');g.addColorStop(1,'#8f78c9');
+  sctx.fillStyle=g;sctx.fillRect(0,0,w,h);
+  for(let i=0;i<60;i++){sctx.fillStyle='rgba(255,255,255,'+(Math.random()*0.15)+')';sctx.fillRect(Math.random()*w,Math.random()*h,3,3);}
+  sctx.fillStyle='rgba(255,255,255,.9)';sctx.textAlign='center';sctx.textBaseline='middle';
+  sctx.font='30px "ZCOOL KuaiLe","PingFang SC",sans-serif';sctx.fillText('刮一刮 ✨',w/2,h/2);
+}
+buildScratch();
+function posFromEvent(e){
+  const r=scratch.getBoundingClientRect();
+  const cx=(e.clientX!=null?e.clientX:(e.touches&&e.touches[0].clientX))-r.left;
+  const cy=(e.clientY!=null?e.clientY:(e.touches&&e.touches[0].clientY))-r.top;
+  return {x:cx*(scratch.width/r.width),y:cy*(scratch.height/r.height)};
+}
+function scratchAt(p){sctx.globalCompositeOperation='destination-out';sctx.beginPath();sctx.arc(p.x,p.y,24,0,7);sctx.fill();}
+function checkScratch(){
+  if(scratchDone)return;
+  const img=sctx.getImageData(0,0,scratch.width,scratch.height).data;
+  let clear=0,total=0;
+  for(let i=3;i<img.length;i+=4*40){total++;if(img[i]<40)clear++;}
+  if(clear/total>0.5)revealScratch();
+}
+function revealScratch(){
+  scratchDone=true;scratch.style.opacity='0';scratch.style.pointerEvents='none';
+  document.getElementById('scratchHint').textContent='🎉 惊喜出现啦！';
+  const r=card.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,80,8);
+  if(!stages[1].querySelector('.adv')){
+    const nx=document.createElement('button');nx.className='btn pink adv';nx.textContent='去吹蜡烛 →';
+    nx.onclick=()=>go(2);stages[1].appendChild(nx);
+  }
+}
+scratch.addEventListener('pointerdown',e=>{scratching=true;scratchAt(posFromEvent(e));});
+scratch.addEventListener('pointermove',e=>{if(!scratching)return;scratchAt(posFromEvent(e));checkScratch();});
+addEventListener('pointerup',()=>{scratching=false;});
+scratch.addEventListener('touchmove',e=>{e.preventDefault();},{passive:false});
+
+/* ---- 第2屏 蛋糕 / 吹气 ---- */
+const cake=document.getElementById('cake');
+let candles=[],lit=0,micRAF;
+function buildCandles(){
+  candles.forEach(c=>c.remove());candles=[];lit=5;
+  [-66,-33,0,33,66].forEach(off=>{
+    const c=document.createElement('div');c.className='candle';
+    c.style.left='calc(50% + '+off+'px)';c.style.transform='translateX(-50%)';
+    c.innerHTML='<div class="flame"></div><div class="smoke"></div>';
+    cake.appendChild(c);candles.push(c);
+  });
+}
+buildCandles();
+function blowOne(){const s=candles.filter(c=>!c.classList.contains('out'));if(!s.length)return;s[0].classList.add('out');lit--;if(lit<=0)candlesDone();}
+function candlesDone(){
+  cake.classList.remove('windy');
+  const r=cake.getBoundingClientRect();burst(r.left+r.width/2,r.top+10,70,8);
+  document.getElementById('cakeTitle').innerHTML='许个愿吧！✨';
+  document.getElementById('cakeKicker').textContent='第二步 · 干得漂亮';
+  document.getElementById('micMeterWrap').style.display='none';
+  if(!stages[2].querySelector('.adv')){
+    const nx=document.createElement('button');nx.className='btn pink adv';nx.textContent='摇一摇手机 →';
+    nx.onclick=()=>go(3);stages[2].appendChild(nx);
+  }
+}
+document.getElementById('tapCandlesBtn').addEventListener('click',()=>{
+  document.getElementById('cakeHint').textContent='点蛋糕，一下灭一根蜡烛。';
+  cake.style.cursor='pointer';cake.onclick=blowOne;
+});
+document.getElementById('micBtn').addEventListener('click',async()=>{
+  const hint=document.getElementById('cakeHint');
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const ac=new (window.AudioContext||window.webkitAudioContext)();
+    const src=ac.createMediaStreamSource(stream);
+    const analyser=ac.createAnalyser();analyser.fftSize=512;
+    const data=new Uint8Array(analyser.fftSize);src.connect(analyser);
+    document.getElementById('micMeterWrap').style.display='block';
+    hint.textContent='深吸一口气，用力吹～ 🌬️';
+    let loud=0;const meter=document.getElementById('micMeter');
+    (function tick(){
+      analyser.getByteTimeDomainData(data);let sum=0;
+      for(let i=0;i<data.length;i++){const v=(data[i]-128)/128;sum+=v*v;}
+      const rms=Math.sqrt(sum/data.length);
+      meter.style.width=Math.min(100,rms*240)+'%';
+      cake.classList.toggle('windy', rms>0.12 && lit>0);
+      if(rms>0.20){loud++;if(loud%3===0)blowOne();}else{loud=Math.max(0,loud-1);}
+      if(lit>0)micRAF=requestAnimationFrame(tick);
+    })();
+  }catch(e){
+    hint.textContent='这里用不了麦克风 —— 点蛋糕来吹灭 👇';
+    cake.style.cursor='pointer';cake.onclick=blowOne;
+  }
+});
+
+/* ---- 第3屏 摇一摇 / 动作检测 ---- */
+let lastMag=0,shakeProgress=0,shakeArmed=false,shakeGoal=10;
+const shakeMeter=document.getElementById('shakeMeter');
+function onMotion(e){
+  const a=e.accelerationIncludingGravity||e.acceleration;if(!a)return;
+  const mag=Math.abs(a.x||0)+Math.abs(a.y||0)+Math.abs(a.z||0);
+  const delta=Math.abs(mag-lastMag);lastMag=mag;
+  if(delta>7){
+    shakeProgress=Math.min(shakeGoal,shakeProgress+1);
+    shakeMeter.style.width=(shakeProgress/shakeGoal*100)+'%';
+    document.getElementById('shakeEmoji').classList.add('go');rain(18);
+    if(shakeProgress>=shakeGoal&&shakeArmed){shakeArmed=false;shakeWin();}
+  }
+}
+function armShake(){
+  shakeProgress=0;shakeArmed=true;shakeMeter.style.width='0%';
+  document.getElementById('shakeEmoji').textContent='📱';
+  document.getElementById('shakeEmoji').classList.remove('go');
+  document.getElementById('shakeStatus').textContent=state.motionOK?'用力摇一摇！':'这里检测不到动作 —— 点下面按钮代替。';
+  if(state.motionOK)window.addEventListener('devicemotion',onMotion);
+}
+function shakeWin(){
+  window.removeEventListener('devicemotion',onMotion);shakeMeter.style.width='100%';
+  document.getElementById('shakeEmoji').textContent='🎊';
+  document.getElementById('shakeEmoji').classList.remove('go');
+  document.getElementById('shakeStatus').textContent='哇！你把整个派对都摇出来啦！';
+  rain(130);
+  if(!stages[3].querySelector('.adv')){
+    const nx=document.createElement('button');nx.className='btn pink adv';nx.textContent='拆开你的礼物 →';
+    nx.onclick=()=>go(4);stages[3].appendChild(nx);
+  }
+}
+document.getElementById('shakeFallback').addEventListener('click',()=>{rain(40);shakeArmed=true;shakeProgress=shakeGoal;shakeWin();});
+
+/* ---- 第4屏 生日签（无品牌内容） ---- */
+const WISHES=[
+ "你不是变老了 —— 你是限量典藏版，还自带隐藏功能。",
+ "剧透：今天你是主角，请尽情发光发热。",
+ "愿你的蛋糕特别大，烦恼小得像块蛋糕渣。",
+ "警告：检测到一位超好玩的人类，请配合蛋糕食用。",
+ "升级成功！解锁新特权：加倍零食，零负罪感。",
+ "据说吃了生日蛋糕的人会长生不老，大概吧。",
+ "今日天气预报：100% 概率你超棒。",
+ "年龄只是你绕着太阳炫耀了几圈而已。",
+ "愿你所有愿望都成真 —— 除了减肥那个。",
+ "又长大一岁，还是最适合一起分甜点的人。"
+];
+let lastWish=-1,wishTaps=0;
+document.getElementById('gift').addEventListener('click',e=>{
+  const g=e.currentTarget;g.classList.remove('wiggle');void g.offsetWidth;g.classList.add('wiggle');
+  let i;do{i=(Math.random()*WISHES.length)|0;}while(i===lastWish&&WISHES.length>1);lastWish=i;
+  document.getElementById('fortune').textContent=WISHES[i];
+  const r=g.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,22,4);
+  wishTaps++;if(wishTaps>=2)document.getElementById('toFinal').style.display='inline-block';
+});
+document.getElementById('toFinal').addEventListener('click',()=>go(5));
+
+/* ---- 第5屏 终幕（祝福语无品牌内容） ---- */
+function showFinal(){
+  document.getElementById('finalName').textContent=state.name;
+  document.getElementById('personalMsg').textContent='乐怡，这一年你真的辛苦了。别再跟自己较劲、别再内耗——你不需要活成谁的样子，因为你本来就已经足够好。哪怕今天只比昨天好一点点，那也超级棒，值得你为自己骄傲。慢慢来，你一直都在往前走，我都看在眼里。新的一岁，请先把温柔和相信留给自己。生日快乐，要一直发光哦 🎂';
+  let n=0;const iv=setInterval(()=>{burst(innerWidth*Math.random(),innerHeight*0.35*Math.random()+60,30,7);if(++n>6)clearInterval(iv);},350);
+  playSynth();
+}
+
+/* 合成版背景音乐 = 蜜雪冰城主题曲原曲调（公版《哦！苏珊娜》），纯旋律实时合成 */
+let musicCtx=null,musicTimer=null,musicMuted=false,masterGain=null;
+const NOTE={C:261.63,D:293.66,E:329.63,F:349.23,G:392.00,A:440.00,B:493.88,C5:523.25};
+const TUNE=[
+ ['C',.5],['D',.5],['E',1],['G',1],['G',1],
+ ['A',.5],['G',.5],['E',1],['C',1],
+ ['D',.5],['E',.5],['E',1],['D',1],['C',2],
+ ['C',.5],['D',.5],['E',1],['G',1],['G',1],
+ ['A',.5],['G',.5],['E',1],['C',1],
+ ['D',.5],['E',.5],['D',1],['C',1],['C',2]
+];
+function playSynth(){
+  if(musicCtx)return;
+  try{musicCtx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+  if(musicCtx.state==='suspended')musicCtx.resume();
+  masterGain=musicCtx.createGain();masterGain.gain.value=musicMuted?0:0.22;masterGain.connect(musicCtx.destination);
+  const beat=0.34;
+  function scheduleOnce(start){let t=start;for(const [n,b] of TUNE){const dur=b*beat;
+    const o=musicCtx.createOscillator();const g=musicCtx.createGain();o.type='triangle';o.frequency.value=NOTE[n];
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1,t+0.02);g.gain.exponentialRampToValueAtTime(0.001,t+dur*0.92);
+    o.connect(g).connect(masterGain);o.start(t);o.stop(t+dur);t+=dur;}return t-start;}
+  (function cycle(){const len=scheduleOnce(musicCtx.currentTime+0.05);musicTimer=setTimeout(cycle,(len+0.4)*1000);})();
+}
+function stopSynth(){if(musicTimer){clearTimeout(musicTimer);musicTimer=null;}if(musicCtx){try{musicCtx.close();}catch(e){}musicCtx=null;masterGain=null;}}
+function stopAllMusic(){stopSynth();}
+
+document.getElementById('muteBtn').addEventListener('click',e=>{
+  musicMuted=!musicMuted;
+  if(masterGain)masterGain.gain.value=musicMuted?0:0.22;
+  e.target.textContent=musicMuted?'播放':'静音';
+});
+
+/* ---- 重玩 ---- */
+document.getElementById('replayBtn').addEventListener('click',()=>{
+  stopAllMusic();musicMuted=false;
+  document.getElementById('muteBtn').textContent='静音';
+  document.getElementById('musicLabel').textContent='🎵 背景音乐：蜜雪冰城旋律';
+  [...document.querySelectorAll('.adv')].forEach(b=>b.remove());
+  buildCandles();lit=5;
+  document.getElementById('cakeTitle').innerHTML='对着麦克风吹气<br>把蜡烛吹灭 🌬️';
+  document.getElementById('cakeKicker').textContent='第二步 · 吹灭蜡烛';
+  document.getElementById('micMeterWrap').style.display='none';
+  document.getElementById('cakeHint').textContent='';
+  cake.onclick=null;cake.style.cursor='default';cake.classList.remove('windy');
+  document.getElementById('fortune').textContent='…';
+  document.getElementById('toFinal').style.display='none';wishTaps=0;
+  go(0);
+});
+</script>
+</body>
+</html>
